@@ -1,226 +1,165 @@
 CCNA Day 4 Assignment:
 
-S1 - File Server (FINANCE)
-S2 - DNS Server
-P1 - Finance PC;  P1v2 - Finance PC
-P2 - IT PC; P2v2 - IT PC
-
-
-### SETUP OSPF
-
-!@P1
-conf t
- hostname PC-FINANCE
- int e0/0
-  ip add 10.2.3.11 255.255.255.224
-  ip add 10.2.3.12 255.255.255.224 secondary
-  no shut
- !
- ip route 0.0.0.0 0.0.0.0 10.2.3.1 10
- ip route 0.0.0.0 0.0.0.0 10.2.3.2 20
- end
-
-
-!@P2
-conf t
- hostname PC-IT
- int e1/0
-  ip add 10.2.4.11 255.255.255.240
-  ip add 10.2.4.12 255.255.255.240 secondary
-  no shut
- !
- ip route 0.0.0.0 0.0.0.0 10.2.4.2 10
- ip route 0.0.0.0 0.0.0.0 10.2.4.1 20
- end
-
-
-!@S1
-conf t
- hostname S1-FILE
- int e1/0
-  ip add 192.168.1.133 255.255.255.224
-  no shut
- !
- ip route 0.0.0.0 0.0.0.0 192.168.1.129
-  end
-
-
-!@S2
-conf t
- hostname S2-DNS
- int e1/0
-  ip add 10.2.2.133 255.255.255.0
-  no shut
- !
- ip route 0.0.0.0 0.0.0.0 10.2.2.2
-  end
-  
- 
-!@A1
-conf t
- int e0/0
-  switchport access vlan 30
-  end
-
-
-!@A2
-conf t
- int e1/0
-  switchport access vlan 40
-  end
-  
-  
-!@D1
-conf t
- vlan 30
-  name FINANCE
- vlan 40
-  name IT
- !
- int vlan 30
-  ip add 10.2.3.1 255.255.255.224
-  no shut
- int vlan 40
-  ip add 10.2.4.1 255.255.255.240
-  no shut
- !
- router ospf 1
-  router-id 10.1.4.6
-  network 10.2.1.0      0.0.0.255 area 0
-  network 10.2.2.0      0.0.0.255 area 0
-  network 192.168.1.128 0.0.0.31  area 0
-  network 10.1.4.4      0.0.0.3   area 0
-  !
-  network 10.2.3.0      0.0.0.31 area 0
-  network 10.2.4.0      0.0.0.15 area 0
- !
- int e1/0
-  switchport access vlan 100
-  end
- 
-!@D2
-conf t
- int vlan 30
-  ip add 10.2.3.2 255.255.255.224
-  no shut
- int vlan 40
-  ip add 10.2.4.2 255.255.255.240
-  no shut
- !
- router ospf 1
-  router-id 10.1.4.10
-  network 10.2.1.0      0.0.0.255 area 0
-  network 10.2.2.0      0.0.0.255 area 0
-  network 192.168.1.128 0.0.0.31  area 0
-  network 10.1.4.8      0.0.0.3   area 0  
-  !
-  network 10.2.3.0      0.0.0.31 area 0
-  network 10.2.4.0      0.0.0.15 area 0
- !
- int e1/0
-  switchport access vlan 20
-  end
-
+~~~
 !@R4
 conf t
+ int e3/3
+  ip add 208.8.8.11 255.255.255.0
+  ip add 208.8.8.12 255.255.255.0 secondary
+  no shut
+  exit
+ !
+ int e0/1
+  ip add 10.11.11.1 255.255.255.224
+  no shut
+ !
+ int e0/3
+  ip add 10.1.2.10 255.255.255.252
+  no shut
+ !
+ ip route 0.0.0.0 0.0.0.0 208.8.8.2
+ !
  router ospf 1
-  network 10.1.4.4      0.0.0.3   area 0
-  network 10.1.4.8      0.0.0.3   area 0
-  network 4.4.4.4       0.0.0.0   area 0
-  end
-  
+  router-id 4.4.4.4 
+  network 4.4.4.4 0.0.0.0 area 0
+  network 208.8.8.0 0.0.0.255 area 0
+  network 10.11.11.0 0.0.0.31 area 0
+  network 10.1.2.8  0.0.0.3 area 0
+  network 10.1.1.8 0.0.0.3 area 0
+  passive-interface e0/1
+ end
+~~~
 
 
-### NETWORK SEGMENTATION
-Configure various ACLs to achieve the ff:
-
-1. On S1, configure a STANDARD ACL named FWP-S1-INT so that only PCs in FINANCE can access the FILE SERVER
-
-!@S1
+~~~
+!@R3
 conf t
- ip access-list standard FWP-S1
-  permit 10.2.3.0 0.0.0.31
-  
- int e1/0
-  ip access-group FWP-S1 in
+ int e0/3
+  ip add 10.1.2.9 255.255.255.252
+  no shut
+ !
+ int e0/1
+  ip add 10.22.22.1 255.255.255.224
+  no shut
+ !
+ router ospf 1
+  router-id 3.3.3.3
+  network 3.3.3.3 0.0.0.0 area 0
+  network 10.1.2.8 0.0.0.3 area 0
+  network 10.1.1.8 0.0.0.3 area 0
+  network 10.22.22.0 0.0.0.31 area 0
+  passive-interface e0/1
   end
+~~~
 
 
-2. Enable SSH on S1, then: On S1, configure a STANDARD ACL named FWP-S1-VTY to prevent remote connections from P1v2
-
-!@S1
+~~~
+!@P1
 conf t
- ip domain name FINANCE.SERVER
+ hostname FINANCE
+ int e0/1
+  no shut
+  ip add 10.11.11.11 255.255.255.224
+  ip add 10.11.11.12 255.255.255.224 secondary
+ !
+ ip route 0.0.0.0 0.0.0.0 10.11.11.1
+ end
+~~~
+
+
+~~~
+!@P2
+conf t
+ hostname IT
+ int e0/1
+  no shut
+  ip add 10.22.22.21 255.255.255.224
+  ip add 10.22.22.22 255.255.255.224 secondary
+ !
+ ip route 0.0.0.0 0.0.0.0 10.22.22.1
+ end
+~~~
+
+
+
+
+### Make R4 Vulnerable
+
+~~~
+!@R4
+config t
+ ip domain name R4.COM
+ crypto key generate rsa modulus 2048
+ ip ssh version 2
  username admin priv 15 secret pass
  line vty 0 4
   transport input all
   login local
- !
- crypto key generate rsa modulus 2048
- ip ssh version 2
- end
-
-
-!@S1
-conf t
- no ip access-list standard FWP-S1-VTY
- ip access-list standard FWP-S1-VTY
-  deny host 10.2.3.12 log
-  permit any 
   exit
- !
- line vty 0 4
-  access-class FWP-S1-VTY in
+ ip host www.bet11.com 208.8.8.11
+ ip host www.bet12.com 208.8.8.12
+ ip host www.bet100.com 208.8.8.100
+ service finger
+ service tcp-small-servers
+ service udp-small-servers
+ ip dns server
+ ip http server
+ ip http secure-server
+ telephony-service
+  no auto-reg-ephone
+  max-ephones 5
+  max-dn 20
+  ip source-address 208.8.8.11 port 2000
+  exit
+ voice service voip
+  allow-connections h323 to sip
+          
+  allow-connections sip to h323
+  allow-connections sip to sip
+  supplementary-service h450.12
+ sip
+   bind control source-interface e3/3
+   bind media source-interface e3/3
+   registrar server expires max 600 min 60
+ voice register global
+  mode cme
+  source-address 208.8.8.11 port 5060 secondary 208.8.8.12
+  max-dn 12
+  max-pool 12
+  authenticate register
+  create profile sync syncinfo.xml
   end
-  
+~~~
 
-3. Activity: Prevent all traffic from FINANCE from reaching the NET (4.4.4.4)
-ACL Type:  STANDARD
-Name: FWP-NOFIN
 
-!@R4
-conf t
- ip access-list standard FWP-NOFIN 
-  deny 10.2.3.0 0.0.0.31
-  permit any
- !
- int e1/0
-  ip access-group FWP-NOFIN in
- int e1/1
-  ip access-group FWP-NOFIN in
-  end
+
+
+### 1. Using a STANDARD ACL, prevent FINANCE from Remotely Accessing R4
+- Make sure the STANDARD ACL uses the highest number identifier.
+
+
+
+### 2. Create an ACL that will prevent FINANCE from
+- Sending PINGs outside of FINANCE
+- Prevent Accessing R3 via TELNET
+- Allow only P1-12 (10.11.11.12) to PING R3 on its loopback interface
  
- 
-4. Configure an EXTENDED ACL that prevents traffic from :
-FINANCE:
-   P1 cannot PING, SSH, TELNET
-   P1v2 can only PING
-   
-   
-IT: 
-   Allow all traffic
-   P2 
+
+
+### 3. Modify the ACL on R4 without removing existing entries in the ACL, 
+to allow IT to PING and TELNET FINANCE but not the otherway around.
 
 
 
 
+### 4. Allow the Following Ports on R4's e3/3 interface
+- www.bet11.com  : FTP, SIP, MySQL NTP
+- www.bet12.com  : IMAPS, POP3S, SUBMISSION, SMTPS
 
 
 
 
-
-
-
-1. S1 (File Server) should only be accessible to FINANCE   (SVI)
-2. Finance (P1 & P1v2) can only ping each.                 (SVI)
-
-3. Use a standard ACL so that IT must be the only ones that can remotely connect to R4
-
-4. Do not allow TELNET from P2 on D1
-5. Do not allow SSH from P2v2 on D2
-6. Allow TELNET & SSH from IT to R4
-
-7. IT Can PING, TELNET, & SSH Finance but not the other way around.
-
-
+### 5. Setup R4 as a Proxy for the ff:
+- www.bet100.com : 80 & 8080
+- www.bet100.com : 443 & 8443
 
